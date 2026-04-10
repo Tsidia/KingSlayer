@@ -4,6 +4,9 @@ A small companion tool for [Armello](https://store.steampowered.com/app/290340/A
 
 It is one self-contained HTML file. No install, no build, no server — just open `armello.html` in any browser.
 
+<img width="1906" height="299" alt="image" src="https://github.com/user-attachments/assets/7fe236bc-c701-4623-964b-fc843541bc1a" />
+
+
 ## What it answers
 
 Given the dice each side will roll, their health, their explosion caps, and any pre-locked hits or shields, it returns:
@@ -16,6 +19,9 @@ Given the dice each side will roll, their health, their explosion caps, and any 
 Plus average damage dealt, average damage taken, total survival chance, and total kill chance.
 
 Numbers come from a Monte Carlo simulation — 50,000 simulated battles per calculation, recomputed instantly whenever you nudge a value. The standard error sits around 0.2%, which is well below the precision anyone actually needs at the table.
+
+<img width="1562" height="521" alt="image" src="https://github.com/user-attachments/assets/76ce02dd-f336-4ac9-852d-1c5aab14c6f8" />
+
 
 ## Modes
 
@@ -50,6 +56,9 @@ For each side:
 - **Bonus shields** — same idea, for shields
 
 Every field is a `−` / number / `+` stepper. You can type into the number directly or click the buttons.
+
+<img width="1599" height="508" alt="image" src="https://github.com/user-attachments/assets/6637bc5d-3731-4b2c-9500-49d617d602d0" />
+
 
 ## Running it
 
