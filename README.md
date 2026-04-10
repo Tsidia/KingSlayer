@@ -63,7 +63,3 @@ Every field is a `−` / number / `+` stepper. You can type into the number dire
 ## Running it
 
 Double-click `armello.html`, or open it from your browser's File menu. That's the whole setup. It runs entirely client-side; nothing leaves your machine.
-
-## Screenshots
-
-*(coming soon)*
