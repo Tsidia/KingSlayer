@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Armello Combat Calculator</title>
+<style>
+  :root {
+    --bg-0: #0e0805;
+    --bg-1: #1a100a;
+    --bg-2: #251610;
+    --panel: #2a1a12;
+    --panel-edge: #4a2e1c;
+    --gold: #d4a857;
+    --gold-bright: #f0c878;
+    --gold-dim: #8a6a36;
+    --parchment: #ecd9a8;
+    --parchment-dim: #b8a77c;
+    --blood: #a83232;
+    --blood-bright: #d44848;
+    --leaf: #6a9a4a;
+    --leaf-bright: #8cc060;
+    --moon: #6a8ac0;
+    --shadow: rgba(0,0,0,0.6);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at top, #2a1a10 0%, var(--bg-0) 70%),
+      var(--bg-0);
+    color: var(--parchment);
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .frame {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 28px 48px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  h1 {
+    font-size: 38px;
+    letter-spacing: 4px;
+    margin: 0 0 6px;
+    font-weight: 400;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, var(--gold-dim));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 2px 12px rgba(212,168,87,0.15);
+  }
+  .subtitle {
+    color: var(--parchment-dim);
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+  .mode-toggle {
+    display: inline-flex;
+    margin-top: 18px;
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+    padding: 4px;
+    background: var(--bg-1);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .mode-toggle button {
+    background: transparent;
+    border: 0;
+    color: var(--parchment-dim);
+    font-family: inherit;
+    font-size: 14px;
+    letter-spacing: 2px;
+    padding: 8px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .mode-toggle button.active {
+    background: linear-gradient(180deg, #4a2e1c, #2a1a10);
+    color: var(--gold-bright);
+    box-shadow:
+      0 0 0 1px var(--gold-dim),
+      0 2px 8px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  .panel {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.03), transparent 30%),
+      var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 14px;
+    padding: 22px 22px 20px;
+    box-shadow:
+      0 4px 20px var(--shadow),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+    position: relative;
+  }
+  .panel.player::before, .panel.enemy::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 18px; right: 18px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.5;
+  }
+  .panel h2 {
+    margin: 0 0 16px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    font-weight: 400;
+    color: var(--gold-bright);
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .panel.player h2 { color: var(--leaf-bright); }
+  .panel.enemy h2 { color: var(--blood-bright); }
+  .field {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    margin: 10px 0;
+    gap: 10px;
+  }
+  .field label {
+    color: var(--parchment-dim);
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+  .stepper {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-1);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+  }
+  .stepper button {
+    background: transparent;
+    border: 0;
+    color: var(--gold);
+    width: 30px;
+    height: 32px;
+    font-size: 18px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .stepper button:hover {
+    background: rgba(212,168,87,0.12);
+    color: var(--gold-bright);
+  }
+  .stepper input {
+    background: transparent;
+    border: 0;
+    color: var(--parchment);
+    width: 50px;
+    height: 32px;
+    text-align: center;
+    font-family: inherit;
+    font-size: 16px;
+    -moz-appearance: textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input:focus { outline: none; color: var(--gold-bright); }
+
+  .results {
+    margin-top: 28px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.025), transparent 30%),
+      var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 14px;
+    padding: 24px 26px 22px;
+    box-shadow:
+      0 4px 24px var(--shadow),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .results h3 {
+    margin: 0 0 18px;
+    font-size: 18px;
+    letter-spacing: 3px;
+    font-weight: 400;
+    color: var(--gold-bright);
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .outcomes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .outcome {
+    background: var(--bg-1);
+    border: 1px solid var(--panel-edge);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .outcome .bar {
+    position: absolute;
+    inset: 0;
+    width: 0%;
+    transition: width 0.4s ease;
+    opacity: 0.18;
+  }
+  .outcome .row {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .outcome .label {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+  }
+  .outcome .pct {
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--parchment);
+    font-variant-numeric: tabular-nums;
+  }
+  .outcome.win .bar { background: var(--leaf-bright); }
+  .outcome.win .pct { color: var(--leaf-bright); }
+  .outcome.loss .bar { background: var(--blood-bright); }
+  .outcome.loss .pct { color: var(--blood-bright); }
+  .outcome.both-live .bar { background: var(--moon); }
+  .outcome.both-live .pct { color: var(--moon); }
+  .outcome.both-die .bar { background: var(--gold); }
+  .outcome.both-die .pct { color: var(--gold); }
+
+  .extras {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    color: var(--parchment-dim);
+    font-size: 13px;
+  }
+  .extras .stat {
+    background: var(--bg-1);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .extras .stat .v {
+    display: block;
+    color: var(--gold-bright);
+    font-size: 18px;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  footer {
+    margin-top: 22px;
+    text-align: center;
+    color: var(--parchment-dim);
+    font-size: 12px;
+    font-style: italic;
+  }
+  @media (max-width: 720px) {
+    .panels { grid-template-columns: 1fr; }
+    .outcomes { grid-template-columns: 1fr; }
+    .extras { grid-template-columns: 1fr 1fr; }
+    h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header>
+    <h1>ARMELLO COMBAT</h1>
+    <div class="subtitle">— a calculator for the bold and the doomed —</div>
+    <div class="mode-toggle" role="tablist">
+      <button id="modeStandard" class="active">STANDARD</button>
+      <button id="modeKing">SLAY THE KING</button>
+    </div>
+  </header>
+
+  <div class="panels">
+    <div class="panel player">
+      <h2>You</h2>
+      <div class="field"><label>Dice rolled</label><div class="stepper" data-id="pDice"></div></div>
+      <div class="field"><label>Health</label><div class="stepper" data-id="pHP"></div></div>
+      <div class="field"><label>Max explosions</label><div class="stepper" data-id="pExp"></div></div>
+      <div class="field"><label>Bonus hits</label><div class="stepper" data-id="pHits"></div></div>
+      <div class="field"><label>Bonus shields</label><div class="stepper" data-id="pShields"></div></div>
+    </div>
+
+    <div class="panel enemy">
+      <h2 id="enemyTitle">Enemy</h2>
+      <div class="field"><label>Dice rolled</label><div class="stepper" data-id="eDice"></div></div>
+      <div class="field"><label>Health</label><div class="stepper" data-id="eHP"></div></div>
+      <div class="field"><label>Max explosions</label><div class="stepper" data-id="eExp"></div></div>
+      <div class="field"><label>Bonus hits</label><div class="stepper" data-id="eHits"></div></div>
+      <div class="field"><label>Bonus shields</label><div class="stepper" data-id="eShields"></div></div>
+    </div>
+  </div>
+
+  <div class="results">
+    <h3>Outcomes</h3>
+    <div class="outcomes">
+      <div class="outcome win"><div class="bar"></div><div class="row"><span class="label">You win</span><span class="pct" id="oWin">—</span></div></div>
+      <div class="outcome loss"><div class="bar"></div><div class="row"><span class="label" id="oLossLabel">Enemy wins</span><span class="pct" id="oLoss">—</span></div></div>
+      <div class="outcome both-live"><div class="bar"></div><div class="row"><span class="label">Stalemate</span><span class="pct" id="oBothLive">—</span></div></div>
+      <div class="outcome both-die"><div class="bar"></div><div class="row"><span class="label">Mutual demise</span><span class="pct" id="oBothDie">—</span></div></div>
+    </div>
+    <div class="extras">
+      <div class="stat">Avg dmg dealt<span class="v" id="sDmgOut">—</span></div>
+      <div class="stat">Avg dmg taken<span class="v" id="sDmgIn">—</span></div>
+      <div class="stat">You survive<span class="v" id="sLive">—</span></div>
+      <div class="stat" id="sEnemyKillBox">Enemy slain<span class="v" id="sKill">—</span></div>
+    </div>
+  </div>
+
+  <footer>50,000 simulated battles per calculation · adjust any value to recompute</footer>
+</div>
+
+<script>
+const TRIALS = 50000;
+
+const defaults = {
+  pDice: 4, pHP: 5, pExp: 1, pHits: 0, pShields: 0,
+  eDice: 4, eHP: 5, eExp: 1, eHits: 0, eShields: 0,
+};
+const limits = {
+  pDice: [0, 30], eDice: [0, 30],
+  pHP:   [1, 30], eHP:   [1, 30],
+  pExp:  [0, 10], eExp:  [0, 10],
+  pHits: [0, 30], eHits: [0, 30],
+  pShields: [0, 30], eShields: [0, 30],
+};
+const state = { ...defaults, mode: 'standard' };
+
+function buildSteppers() {
+  document.querySelectorAll('.stepper').forEach(s => {
+    const id = s.dataset.id;
+    s.innerHTML = `
+      <button data-act="dec" aria-label="decrease">−</button>
+      <input type="number" value="${state[id]}" />
+      <button data-act="inc" aria-label="increase">+</button>
+    `;
+    const input = s.querySelector('input');
+    const [lo, hi] = limits[id];
+    const clamp = v => Math.max(lo, Math.min(hi, v|0));
+    const update = v => {
+      state[id] = clamp(v);
+      input.value = state[id];
+      compute();
+    };
+    s.querySelector('[data-act="dec"]').addEventListener('click', () => update(state[id] - 1));
+    s.querySelector('[data-act="inc"]').addEventListener('click', () => update(state[id] + 1));
+    input.addEventListener('input', () => update(parseInt(input.value || '0', 10)));
+    input.addEventListener('blur',  () => { input.value = state[id]; });
+  });
+}
+
+// Roll a batch of dice. Returns {hits, shields, misses}.
+// isKing: worm becomes a shield instead of a miss.
+function rollBatch(numDice, maxExp, isKing) {
+  let hits = 0, shields = 0, misses = 0;
+  let explosionsUsed = 0;
+  let queue = numDice;
+  while (queue > 0) {
+    queue--;
+    // 0=worm, 1=wrong-time, 2=sword, 3=right-time, 4=shield, 5=wyld
+    const r = (Math.random() * 6) | 0;
+    if (r === 0) {
+      if (isKing) shields++; else misses++;
+    } else if (r === 1) {
+      misses++;
+    } else if (r === 2 || r === 3) {
+      hits++;
+    } else if (r === 4) {
+      shields++;
+    } else {
+      hits++;
+      if (explosionsUsed < maxExp) {
+        explosionsUsed++;
+        queue++;
+      }
+    }
+  }
+  return { hits, shields, misses };
+}
+
+function compute() {
+  const { pDice, pHP, pExp, pHits, pShields,
+          eDice, eHP, eExp, eHits, eShields, mode } = state;
+
+  let win = 0, loss = 0, bothLive = 0, bothDie = 0;
+  let totalDealt = 0, totalTaken = 0;
+  const isKing = mode === 'king';
+
+  for (let i = 0; i < TRIALS; i++) {
+    const p = rollBatch(pDice, pExp, false);
+    let extraForEnemy = 0;
+    if (isKing) extraForEnemy = p.misses;
+    const e = rollBatch(eDice + extraForEnemy, eExp, isKing);
+
+    const playerHits   = p.hits   + pHits;
+    const playerShield = p.shields + pShields;
+    const enemyHits    = e.hits   + eHits;
+    const enemyShield  = e.shields + eShields;
+
+    const dmgToEnemy = Math.max(0, playerHits - enemyShield);
+    const dmgToPlayer = Math.max(0, enemyHits - playerShield);
+
+    totalDealt += dmgToEnemy;
+    totalTaken += dmgToPlayer;
+
+    const playerDead = dmgToPlayer >= pHP;
+    const enemyDead  = dmgToEnemy  >= eHP;
+
+    if (playerDead && enemyDead) bothDie++;
+    else if (enemyDead)          win++;
+    else if (playerDead)         loss++;
+    else                         bothLive++;
+  }
+
+  const fmt = n => (100 * n / TRIALS).toFixed(1) + '%';
+  const setBar = (id, n) => {
+    const card = document.getElementById(id).closest('.outcome');
+    card.querySelector('.bar').style.width = (100 * n / TRIALS).toFixed(1) + '%';
+  };
+
+  document.getElementById('oWin').textContent      = fmt(win);
+  document.getElementById('oLoss').textContent     = fmt(loss);
+  document.getElementById('oBothLive').textContent = fmt(bothLive);
+  document.getElementById('oBothDie').textContent  = fmt(bothDie);
+  setBar('oWin', win);
+  setBar('oLoss', loss);
+  setBar('oBothLive', bothLive);
+  setBar('oBothDie', bothDie);
+
+  document.getElementById('sDmgOut').textContent = (totalDealt / TRIALS).toFixed(2);
+  document.getElementById('sDmgIn').textContent  = (totalTaken / TRIALS).toFixed(2);
+  document.getElementById('sLive').textContent   = fmt(win + bothLive);
+  document.getElementById('sKill').textContent   = fmt(win + bothDie);
+}
+
+function setMode(m) {
+  state.mode = m;
+  document.getElementById('modeStandard').classList.toggle('active', m === 'standard');
+  document.getElementById('modeKing').classList.toggle('active', m === 'king');
+  document.getElementById('enemyTitle').textContent = m === 'king' ? 'The King' : 'Enemy';
+  document.getElementById('oLossLabel').textContent = m === 'king' ? 'King wins' : 'Enemy wins';
+  document.querySelector('#sEnemyKillBox').firstChild.textContent = m === 'king' ? 'King slain' : 'Enemy slain';
+  buildSteppers();
+  compute();
+}
+
+document.getElementById('modeStandard').addEventListener('click', () => setMode('standard'));
+document.getElementById('modeKing').addEventListener('click', () => setMode('king'));
+
+buildSteppers();
+compute();
+</script>
+</body>
+</html>
