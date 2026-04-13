@@ -2,7 +2,7 @@
 
 A small companion tool for [Armello](https://store.steampowered.com/app/290340/Armello/) that estimates the odds of every possible outcome of a fight before you commit to it. Designed to be kept open in a browser tab while you play, with steppers you can poke between turns.
 
-It is one self-contained HTML file. No install, no build, no server — just open `armello.html` in any browser.
+No installs, builds, or servers are needed, just open `armello.html` in your browser.
 
 <img width="1906" height="299" alt="image" src="https://github.com/user-attachments/assets/7fe236bc-c701-4623-964b-fc843541bc1a" />
 
