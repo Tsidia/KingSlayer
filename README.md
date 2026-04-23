@@ -11,14 +11,14 @@ No installs, builds, or servers are needed, just open `armello.html` in your bro
 
 Given the dice each side will roll, their health, their explosion caps, and any pre-locked hits or shields, it returns:
 
-- **You win** — enemy dies, you survive
-- **Enemy wins** — you die, enemy survives
-- **Stalemate** — both survive
-- **Mutual demise** — both die
+- **You win** - enemy dies, you survive
+- **Enemy wins** - you die, enemy survives
+- **Stalemate** - both survive
+- **Mutual demise** - both die
 
 Plus average damage dealt, average damage taken, total survival chance, and total kill chance.
 
-Numbers come from a Monte Carlo simulation — 50,000 simulated battles per calculation, recomputed instantly whenever you nudge a value. The standard error sits around 0.2%, which is well below the precision anyone actually needs at the table.
+Numbers come from a Monte Carlo simulation - 50,000 simulated battles per calculation, recomputed instantly whenever you nudge a value. The standard error sits around 0.2%, which is well below the precision anyone actually needs at the table.
 
 <img width="1562" height="521" alt="image" src="https://github.com/user-attachments/assets/76ce02dd-f336-4ac9-852d-1c5aab14c6f8" />
 
@@ -32,7 +32,7 @@ The normal Armello die has six faces: worm, sword, shield, wyld, sun, and moon. 
 - 2/6 miss
 - 2/6 hit
 - 1/6 shield
-- 1/6 wyld (a hit *and* an extra die — until that side's explosion cap is reached, after which wylds are just hits)
+- 1/6 wyld (a hit *and* an extra die - until that side's explosion cap is reached, after which wylds are just hits)
 
 Damage is `max(0, hits − shields)` per side, with bonus hits and shields added in before that subtraction. Anyone whose damage taken meets or exceeds their HP dies.
 
@@ -40,7 +40,7 @@ Damage is `max(0, hits − shields)` per side, with bonus hits and shields added
 
 The King fight has its own rules:
 
-- The **worm** rolls a shield for the King instead of a miss. (The wrong-time-of-day die is still a normal miss — only the worm specifically shields up.)
+- The **worm** rolls a shield for the King instead of a miss. (The wrong-time-of-day die is still a normal miss - only the worm specifically shields up.)
 - The King **waits for the player to roll first**, then picks up every player miss as a bonus die for himself and rolls those alongside his own pool. Wyld explosions still apply on top, governed by his explosion cap.
 
 Toggle between the two modes at the top of the page.
@@ -52,8 +52,8 @@ For each side:
 - **Dice rolled**
 - **Health**
 - **Max explosions** (how many wylds can chain into extra dice before they revert to plain hits)
-- **Bonus hits** — pre-locked sword symbols from cards, rings, terrain, etc.
-- **Bonus shields** — same idea, for shields
+- **Bonus hits** - pre-locked sword symbols from cards, rings, terrain, etc.
+- **Bonus shields** - same idea, for shields
 
 Every field is a `−` / number / `+` stepper. You can type into the number directly or click the buttons.
 
