@@ -1,8 +1,7 @@
 # Armello Combat Calculator
 
-A small companion tool for [Armello](https://store.steampowered.com/app/290340/Armello/) that estimates the odds of every possible outcome of a fight before you commit to it. Designed to be kept open in a browser tab while you play, with steppers you can poke between turns.
-
-No installs, builds, or servers are needed, just open `armello.html` in your browser.
+A companion tool for [Armello](https://store.steampowered.com/app/290340/Armello/) that estimates combat probabilities for better risk management.
+One file utility. No installs, builds, or servers, you just pop `armello.html` in your browser while you're playing and you're good to go.
 
 <img width="1906" height="299" alt="image" src="https://github.com/user-attachments/assets/7fe236bc-c701-4623-964b-fc843541bc1a" />
 
