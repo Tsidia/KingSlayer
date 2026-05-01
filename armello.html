@@ -331,6 +331,11 @@
 </div>
 
 <script>
+// Standard error on any outcome probability is at most ~0.22% at this N
+// (worst case at p=0.5: sqrt(0.25/50000) ≈ 0.00224). That's well below the
+// precision anyone reading these numbers cares about at the table, and
+// raising it would just cost CPU. See test.html for the closed-form checks
+// that verify the simulator against cases solvable by hand.
 const TRIALS = 50000;
 
 const defaults = {

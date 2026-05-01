@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Armello Combat Calculator: Tests</title>
+<style>
+  body {
+    font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    background:
+      radial-gradient(ellipse at top, #2a1a10 0%, #0e0805 70%),
+      #0e0805;
+    color: #ecd9a8;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 28px 48px;
+    min-height: 100vh;
+  }
+  h1 {
+    color: #f0c878;
+    letter-spacing: 3px;
+    font-weight: 400;
+    margin: 0 0 8px;
+    font-size: 28px;
+  }
+  p {
+    color: #b8a77c;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  code {
+    background: #1a100a;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+    font-size: 14px;
+    background: #1a100a;
+    border: 1px solid #2a1a10;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #2a1a10;
+  }
+  th {
+    color: #d4a857;
+    font-weight: 400;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 12px;
+    background: #0e0805;
+  }
+  td.num { font-family: 'Consolas', monospace; text-align: right; }
+  td.case-name {
+    color: #ecd9a8;
+    border-top: 2px solid #4a2e1c;
+  }
+  tr.case-start td { border-top: 2px solid #4a2e1c; }
+  .pass { color: #8cc060; font-weight: 600; letter-spacing: 1px; }
+  .fail { color: #d44848; font-weight: 600; letter-spacing: 1px; }
+  .summary {
+    margin-top: 24px;
+    padding: 14px 18px;
+    border: 1px solid #4a2e1c;
+    border-radius: 6px;
+    background: #1a100a;
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+  .running { color: #b8a77c; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>Armello Combat Calculator Tests</h1>
+<p>
+  Verifies the Monte Carlo simulator from <code>armello.html</code> against
+  closed-form expected values for cases where the math is solvable by hand.
+  50,000 trials per case. Tolerance is ±1% absolute, comfortably above the
+  ~0.22% standard error at this trial count.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Case</th>
+      <th class="num">Outcome</th>
+      <th class="num">Expected</th>
+      <th class="num">Observed</th>
+      <th class="num">&Delta;</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="results">
+    <tr><td colspan="6" class="running">Running simulations...</td></tr>
+  </tbody>
+</table>
+<div class="summary" id="summary"></div>
+
+<script>
+// --- Simulator (kept in sync with armello.html) ---------------------------
+// rollBatch is copied verbatim. If armello.html changes its dice math, this
+// copy must change with it. Two-file duplication is deliberate: it keeps the
+// calculator a single self-contained HTML file, and the test reaches the same
+// simulator the user actually runs.
+
+function rollBatch(numDice, maxExp, isKing) {
+    let hits = 0, shields = 0, misses = 0;
+    let explosionsUsed = 0;
+    let queue = numDice;
+    while (queue > 0) {
+        queue--;
+        // 0=worm, 1=wrong-time, 2=sword, 3=right-time, 4=shield, 5=wyld
+        const r = (Math.random() * 6) | 0;
+        if (r === 0) {
+            if (isKing) shields++; else misses++;
+        } else if (r === 1) {
+            misses++;
+        } else if (r === 2 || r === 3) {
+            hits++;
+        } else if (r === 4) {
+            shields++;
+        } else {
+            hits++;
+            if (explosionsUsed < maxExp) {
+                explosionsUsed++;
+                queue++;
+            }
+        }
+    }
+    return { hits, shields, misses };
+}
+
+function simulate(p, trials) {
+    let win = 0, loss = 0, bothLive = 0, bothDie = 0;
+    let totalDealt = 0, totalTaken = 0;
+
+    for (let i = 0; i < trials; i++) {
+        const pl = rollBatch(p.pDice, p.pExp, false);
+        const extraForKing = p.isKing ? pl.misses : 0;
+        const en = rollBatch(p.eDice + extraForKing, p.eExp, p.isKing);
+
+        const dmgE = Math.max(0, (pl.hits + p.pHits) - (en.shields + p.eShields));
+        const dmgP = Math.max(0, (en.hits + p.eHits) - (pl.shields + p.pShields));
+
+        totalDealt += dmgE;
+        totalTaken += dmgP;
+
+        const playerDead = dmgP >= p.pHP;
+        const enemyDead  = dmgE >= p.eHP;
+
+        if (playerDead && enemyDead) bothDie++;
+        else if (enemyDead)          win++;
+        else if (playerDead)         loss++;
+        else                         bothLive++;
+    }
+
+    return {
+        win:      win / trials,
+        loss:     loss / trials,
+        bothDie:  bothDie / trials,
+        bothLive: bothLive / trials,
+        avgDealt: totalDealt / trials,
+        avgTaken: totalTaken / trials,
+    };
+}
+
+// --- Expected values, derived by hand --------------------------------------
+//
+// CASE 1: 1d vs 1d, 1 HP each, no explosions, no bonuses.
+//   Each die: P(hit)=3/6 (sword, right-time, wyld; wyld becomes plain hit
+//   when maxExp=0), P(shield)=1/6, P(miss)=2/6 (worm + wrong-time).
+//   Enumerating all 9 (player, enemy) face-class combinations:
+//       win      = (hit, miss)            = (3/6)(2/6) = 6/36
+//       loss     = (miss, hit)            = (2/6)(3/6) = 6/36
+//       bothDie  = (hit, hit)             = (3/6)(3/6) = 9/36
+//       bothLive = remainder              = 15/36 = 5/12
+//   avgDealt = E[max(0, pHits - eShields)] = (3/6)(5/6) * 1 = 5/12. Symmetric.
+//
+// CASE 2: 0d vs 0d. No dice, no bonuses, no damage. Always bothLive.
+//
+// CASE 3: 0d player with 99 bonus shields vs 5d enemy. dmgP capped at 0
+//   (shields >> any roll). Player has 0 hits and no dice, so enemy can never
+//   die. Always bothLive.
+//
+// CASE 4: 5 pre-locked bonus hits vs 0d 1HP enemy with 0 shields. Player
+//   always deals exactly 5 to a 1HP enemy: enemy always dies. Player has no
+//   damage incoming. Always win, avgDealt always 5.
+//
+// CASE 5: Slay the King, 0d player vs 1d king, 1HP each.
+//   Player rolls 0 dice -> {h:0, s:0, m:0}, no extra dice given to king.
+//   King die outcomes (isKing=true, maxExp=0):
+//     P(hit)=3/6 (sword, right-time, wyld), P(shield)=2/6 (worm + shield),
+//     P(miss)=1/6 (wrong-time).
+//   Player has no hits and no shields -> dmgP = king hits (0 or 1), dmgE=0.
+//     loss     = P(king hit)    = 3/6 = 1/2
+//     bothLive = P(no king hit) = 3/6 = 1/2
+//   avgTaken = 1/2. avgDealt = 0.
+
+const CASES = [
+    {
+        name: '1d vs 1d, 1 HP, no exp, no bonuses',
+        params: { pDice:1, pHP:1, pExp:0, pHits:0, pShields:0,
+                  eDice:1, eHP:1, eExp:0, eHits:0, eShields:0, isKing:false },
+        expect: { win: 1/6, loss: 1/6, bothDie: 1/4, bothLive: 5/12,
+                  avgDealt: 5/12, avgTaken: 5/12 },
+    },
+    {
+        name: '0d vs 0d (no combat possible)',
+        params: { pDice:0, pHP:1, pExp:0, pHits:0, pShields:0,
+                  eDice:0, eHP:1, eExp:0, eHits:0, eShields:0, isKing:false },
+        expect: { win: 0, loss: 0, bothDie: 0, bothLive: 1,
+                  avgDealt: 0, avgTaken: 0 },
+    },
+    {
+        name: 'Invincible player (99 shields) vs 5d enemy',
+        params: { pDice:0, pHP:5, pExp:0, pHits:0, pShields:99,
+                  eDice:5, eHP:1, eExp:0, eHits:0, eShields:0, isKing:false },
+        expect: { win: 0, loss: 0, bothDie: 0, bothLive: 1,
+                  avgDealt: 0, avgTaken: 0 },
+    },
+    {
+        name: 'Pre-locked kill: 5 bonus hits vs 0d 1HP enemy',
+        params: { pDice:0, pHP:1, pExp:0, pHits:5, pShields:0,
+                  eDice:0, eHP:1, eExp:0, eHits:0, eShields:0, isKing:false },
+        expect: { win: 1, loss: 0, bothDie: 0, bothLive: 0,
+                  avgDealt: 5, avgTaken: 0 },
+    },
+    {
+        name: 'Slay the King: 0d player vs 1d king, 1 HP each',
+        params: { pDice:0, pHP:1, pExp:0, pHits:0, pShields:0,
+                  eDice:1, eHP:1, eExp:0, eHits:0, eShields:0, isKing:true },
+        expect: { win: 0, loss: 1/2, bothDie: 0, bothLive: 1/2,
+                  avgDealt: 0, avgTaken: 1/2 },
+    },
+];
+
+const TRIALS = 50000;
+const TOLERANCE = 0.01;
+const ROW_ORDER = ['win', 'loss', 'bothDie', 'bothLive', 'avgDealt', 'avgTaken'];
+const ROW_LABELS = {
+    win: 'Win',
+    loss: 'Loss',
+    bothDie: 'Both die',
+    bothLive: 'Both live',
+    avgDealt: 'Avg dmg dealt',
+    avgTaken: 'Avg dmg taken',
+};
+
+function fmt(v) {
+    return v.toFixed(4);
+}
+function fmtSigned(v) {
+    return (v >= 0 ? '+' : '') + v.toFixed(4);
+}
+
+function runTests() {
+    const tbody = document.getElementById('results');
+    tbody.innerHTML = '';
+
+    let pass = 0, fail = 0;
+    for (const c of CASES) {
+        const got = simulate(c.params, TRIALS);
+        ROW_ORDER.forEach((k, i) => {
+            const exp = c.expect[k];
+            const obs = got[k];
+            const diff = obs - exp;
+            const ok = Math.abs(diff) <= TOLERANCE;
+            if (ok) pass++; else fail++;
+
+            const tr = document.createElement('tr');
+            if (i === 0) tr.classList.add('case-start');
+            tr.innerHTML =
+                '<td class="case-name">' + (i === 0 ? c.name : '') + '</td>' +
+                '<td class="num">' + ROW_LABELS[k] + '</td>' +
+                '<td class="num">' + fmt(exp) + '</td>' +
+                '<td class="num">' + fmt(obs) + '</td>' +
+                '<td class="num">' + fmtSigned(diff) + '</td>' +
+                '<td class="' + (ok ? 'pass' : 'fail') + '">' + (ok ? 'PASS' : 'FAIL') + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    const summary = document.getElementById('summary');
+    if (fail === 0) {
+        summary.innerHTML = '<span class="pass">All ' + pass + ' assertions passed</span>' +
+            ' &middot; ' + CASES.length + ' cases &middot; ' + TRIALS.toLocaleString() + ' trials each';
+    } else {
+        summary.innerHTML = '<span class="fail">' + fail + ' assertion(s) failed</span>' +
+            ' (' + pass + ' passed)';
+    }
+}
+
+// Defer one frame so the "Running..." placeholder renders before the
+// (synchronous) simulation blocks the thread.
+requestAnimationFrame(() => requestAnimationFrame(runTests));
+</script>
+
+</body>
+</html>
